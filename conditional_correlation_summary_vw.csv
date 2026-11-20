@@ -1,0 +1,4 @@
+﻿Weighting_Method,Market_Regime,Criterion,Trading_Days,Mean_Correlation,Diff_vs_Normal,Ratio_vs_Normal,Fisher_z_t_stat,Fisher_z_p_value,Wilcoxon_p_value
+Value-Weighted (VW),Normal (보통 날),중간 70% (-0.94% < R_m < +1.02%),413,0.078,0.0,1.0,,,
+Value-Weighted (VW),Surge (급등일),상위 15% (R_m >= +1.02%),89,0.2049,0.1269,2.63,48.8,0.0,0.0
+Value-Weighted (VW),Crash (급락일),하위 15% (R_m <= -0.94%),89,0.4179,0.3399,5.36,130.54,0.0,0.0
