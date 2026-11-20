@@ -1,0 +1,5 @@
+﻿Regime,EW_Mean_Corr,VW_Mean_Corr,Diff_EW_minus_VW,EW_Ratio_vs_Normal,VW_Ratio_vs_Normal
+Normal (보통 날),0.1565,0.078,0.0785,1.0,1.0
+Surge (급등일),0.3308,0.2049,0.1259,2.11,2.63
+Crash (급락일),0.5293,0.4179,0.1114,3.38,5.36
+Crash - Surge (비대칭성),0.1985,0.213,-0.0145,,
