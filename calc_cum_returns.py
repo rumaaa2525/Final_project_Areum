@@ -1,28 +1,47 @@
 import os
-import urllib.request
+import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 
-def set_korean_font():
-    font_candidates = [
-        '/usr/share/fonts/truetype/nanum/NanumGothic.ttf',
-        '/usr/share/fonts/nanum/NanumGothic.ttf',
-        '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
-        'NanumGothic.ttf'
+# 1. 외부 통신 없이 서버 로컬 시스템에서 한글 폰트 자동 탐색
+def get_local_korean_font():
+    # 시스템 폰트 디렉토리에서 자주 쓰이는 한글 폰트 검색
+    search_patterns = [
+        '/usr/share/fonts/**/*Nanum*.tt*',
+        '/usr/share/fonts/**/*NotoSansCJK*.tt*',
+        '/usr/share/fonts/**/*NotoSansKR*.tt*',
+        '/usr/share/fonts/**/*UnDotum*.tt*',
+        '/usr/share/fonts/**/*Baekmuk*.tt*',
+        '/usr/share/fonts/**/*malgun*.tt*',
+        os.path.expanduser('~/.fonts/**/*Nanum*.tt*'),
+        os.path.expanduser('~/.local/share/fonts/**/*Nanum*.tt*')
     ]
-    font_path = next((p for p in font_candidates if os.path.exists(p)), None)
-    if font_path is None:
-        url = "https://github.com/google/fonts/raw/main/ofl/nanumgothic/NanumGothic-Regular.ttf"
-        font_path = "NanumGothic.ttf"
-        urllib.request.urlretrieve(url, font_path)
+    for pattern in search_patterns:
+        matches = glob.glob(pattern, recursive=True)
+        if matches:
+            return matches[0]
+            
+    # matplotlib 내장 폰트 목록에서 한글 폰트 이름 검색
+    for f in fm.fontManager.ttflist:
+        if any(k in f.name for k in ['Nanum', 'Noto Sans CJK', 'Noto Sans KR', 'Malgun', 'UnDotum', 'Baekmuk', 'AppleGothic']):
+            return f.fname
+            
+    return None
+
+font_path = get_local_korean_font()
+if font_path:
     fm.fontManager.addfont(font_path)
-    font_name = fm.FontProperties(fname=font_path).get_name()
-    plt.rc('font', family=font_name)
-    plt.rcParams['axes.unicode_minus'] = False
+    font_prop = fm.FontProperties(fname=font_path)
+    plt.rcParams['font.family'] = font_prop.get_name()
+    print(f"로컬 한글 폰트 로드 성공: {font_prop.get_name()} ({font_path})")
+else:
+    font_prop = None
+    print("[경고] 서버에 설치된 한글 폰트를 찾지 못했습니다. fc-list :lang=ko 결과를 확인해주세요.")
 
-set_korean_font()
+plt.rcParams['axes.unicode_minus'] = False
 
+# 2. 데이터 로드 및 Wide format 변환
 vw_raw = pd.read_csv('sector_daily_returns_vw.csv')
 ew_raw = pd.read_csv('sector_daily_returns_ew.csv')
 
@@ -53,6 +72,7 @@ if ew_daily.abs().max().max() > 1:
 vw_cum = (1 + vw_daily.fillna(0)).cumprod() - 1
 ew_cum = (1 + ew_daily.fillna(0)).cumprod() - 1
 
+# 3. 요약표 및 시계열 저장
 summary = pd.DataFrame({
     'VW_Cum_Return(%)': (vw_cum.iloc[-1] * 100).round(2),
     'EW_Cum_Return(%)': (ew_cum.iloc[-1] * 100).round(2),
@@ -63,6 +83,7 @@ summary.to_csv('sector_cumulative_returns_summary.csv')
 vw_cum.to_csv('sector_cum_returns_vw_series.csv')
 ew_cum.to_csv('sector_cum_returns_ew_series.csv')
 
+# 4. 시각화
 top5_sectors = summary.head(5).index
 bot5_sectors = summary.tail(5).index
 
@@ -71,18 +92,18 @@ fig, axes = plt.subplots(1, 2, figsize=(16, 6), sharey=True)
 for sec in top5_sectors:
     axes[0].plot(vw_cum.index, vw_cum[sec] * 100, label=f"{sec} ({summary.loc[sec, 'VW_Cum_Return(%)']}%)")
 axes[0].axhline(0, color='black', linestyle='--', linewidth=0.8)
-axes[0].set_title('시가총액 가중(VW) 누적 수익률 상위 5개 업종', fontsize=13, fontweight='bold')
-axes[0].set_ylabel('누적 수익률 (%)')
-axes[0].legend(loc='upper left', fontsize=9)
+axes[0].set_title('시가총액 가중(VW) 누적 수익률 상위 5개 업종', fontproperties=font_prop, fontsize=14, fontweight='bold')
+axes[0].set_ylabel('누적 수익률 (%)', fontproperties=font_prop, fontsize=12)
+axes[0].legend(loc='upper left', prop=font_prop, fontsize=10)
 axes[0].grid(alpha=0.3)
 
 for sec in bot5_sectors:
     axes[1].plot(vw_cum.index, vw_cum[sec] * 100, label=f"{sec} ({summary.loc[sec, 'VW_Cum_Return(%)']}%)")
 axes[1].axhline(0, color='black', linestyle='--', linewidth=0.8)
-axes[1].set_title('시가총액 가중(VW) 누적 수익률 하위 5개 업종', fontsize=13, fontweight='bold')
-axes[1].legend(loc='lower left', fontsize=9)
+axes[1].set_title('시가총액 가중(VW) 누적 수익률 하위 5개 업종', fontproperties=font_prop, fontsize=14, fontweight='bold')
+axes[1].legend(loc='lower left', prop=font_prop, fontsize=10)
 axes[1].grid(alpha=0.3)
 
 plt.tight_layout()
 plt.savefig('sector_cum_returns.png', dpi=300)
-print("완료")
+print("sector_cum_returns.png 생성 완료")
