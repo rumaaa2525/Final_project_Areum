@@ -9,7 +9,7 @@ re_shares = re.compile(r'상장주식수.*?<em>([\d,]+)</em>', re.S)
 def parse_fast(path):
     try:
         with open(path, 'r', encoding='utf-8', errors='ignore') as f:
-            html = f.read(85000)  # 상단 85KB만 읽어서 속도 극대화
+            html = f.read()  # 상단 85KB만 읽어서 속도 극대화
         sec = re_sec.search(html).group(1).strip()
         close = float(re_close.search(html).group(1).replace(',', ''))
         prev = float(re_prev.search(html).group(1).replace(',', ''))
