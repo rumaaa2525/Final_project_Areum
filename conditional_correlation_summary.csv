@@ -1,0 +1,5 @@
+Market_Regime,Criterion,Trading_Days,Mean_Correlation,Diff_vs_Normal,Ratio_vs_Normal,Fisher_z_t_stat,Fisher_z_p_value,Wilcoxon_p_value,Comparison_Pair
+Normal (보통 날),중간 70% (-0.91% < R_m < +1.00%),412,0.1565,0.0000,1.00,,,,Baseline
+Surge (급등일),상위 15% (R_m >= +1.00%),90,0.3308,0.1743,2.11,59.79,0.0,0.0,Surge vs Normal
+Crash (급락일),하위 15% (R_m <= -0.91%),89,0.5293,0.3728,3.38,133.11,0.0,0.0,Crash vs Normal
+Crash vs Surge (비대칭성 비교),급락일 - 급등일 차이,,,0.1985,1.60,72.77,0.0,0.0,Crash vs Surge
