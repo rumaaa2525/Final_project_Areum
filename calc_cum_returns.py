@@ -29,7 +29,7 @@ def get_local_korean_font():
             
     return None
 
-font_path = get_local_korean_font()
+font_path = '/usr/share/fonts/truetype/nanum/NanumGothic.ttf'
 if font_path:
     fm.fontManager.addfont(font_path)
     font_prop = fm.FontProperties(fname=font_path)
