@@ -1,44 +1,13 @@
 import os
-import glob
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 
-# 1. 외부 통신 없이 서버 로컬 시스템에서 한글 폰트 자동 탐색
-def get_local_korean_font():
-    # 시스템 폰트 디렉토리에서 자주 쓰이는 한글 폰트 검색
-    search_patterns = [
-        '/usr/share/fonts/**/*Nanum*.tt*',
-        '/usr/share/fonts/**/*NotoSansCJK*.tt*',
-        '/usr/share/fonts/**/*NotoSansKR*.tt*',
-        '/usr/share/fonts/**/*UnDotum*.tt*',
-        '/usr/share/fonts/**/*Baekmuk*.tt*',
-        '/usr/share/fonts/**/*malgun*.tt*',
-        os.path.expanduser('~/.fonts/**/*Nanum*.tt*'),
-        os.path.expanduser('~/.local/share/fonts/**/*Nanum*.tt*')
-    ]
-    for pattern in search_patterns:
-        matches = glob.glob(pattern, recursive=True)
-        if matches:
-            return matches[0]
-            
-    # matplotlib 내장 폰트 목록에서 한글 폰트 이름 검색
-    for f in fm.fontManager.ttflist:
-        if any(k in f.name for k in ['Nanum', 'Noto Sans CJK', 'Noto Sans KR', 'Malgun', 'UnDotum', 'Baekmuk', 'AppleGothic']):
-            return f.fname
-            
-    return None
-
+# 1. 한글 폰트 설정 (NanumGothic.ttf 고정)
 font_path = '/usr/share/fonts/truetype/nanum/NanumGothic.ttf'
-if font_path:
-    fm.fontManager.addfont(font_path)
-    font_prop = fm.FontProperties(fname=font_path)
-    plt.rcParams['font.family'] = font_prop.get_name()
-    print(f"로컬 한글 폰트 로드 성공: {font_prop.get_name()} ({font_path})")
-else:
-    font_prop = None
-    print("[경고] 서버에 설치된 한글 폰트를 찾지 못했습니다. fc-list :lang=ko 결과를 확인해주세요.")
-
+fm.fontManager.addfont(font_path)
+font_prop = fm.FontProperties(fname=font_path)
+plt.rcParams['font.family'] = font_prop.get_name()
 plt.rcParams['axes.unicode_minus'] = False
 
 # 2. 데이터 로드 및 Wide format 변환
@@ -83,13 +52,12 @@ summary.to_csv('sector_cumulative_returns_summary.csv')
 vw_cum.to_csv('sector_cum_returns_vw_series.csv')
 ew_cum.to_csv('sector_cum_returns_ew_series.csv')
 
-# 4. 시각화
-top5_sectors = summary.head(5).index
-bot5_sectors = summary.tail(5).index
+# 4-1. 시각화 1: 시가총액 가중(VW) 기준 (sector_cum_returns.png)
+top5_vw = summary.head(5).index
+bot5_vw = summary.tail(5).index
 
 fig, axes = plt.subplots(1, 2, figsize=(16, 6), sharey=True)
-
-for sec in top5_sectors:
+for sec in top5_vw:
     axes[0].plot(vw_cum.index, vw_cum[sec] * 100, label=f"{sec} ({summary.loc[sec, 'VW_Cum_Return(%)']}%)")
 axes[0].axhline(0, color='black', linestyle='--', linewidth=0.8)
 axes[0].set_title('시가총액 가중(VW) 누적 수익률 상위 5개 업종', fontproperties=font_prop, fontsize=14, fontweight='bold')
@@ -97,7 +65,7 @@ axes[0].set_ylabel('누적 수익률 (%)', fontproperties=font_prop, fontsize=12
 axes[0].legend(loc='upper left', prop=font_prop, fontsize=10)
 axes[0].grid(alpha=0.3)
 
-for sec in bot5_sectors:
+for sec in bot5_vw:
     axes[1].plot(vw_cum.index, vw_cum[sec] * 100, label=f"{sec} ({summary.loc[sec, 'VW_Cum_Return(%)']}%)")
 axes[1].axhline(0, color='black', linestyle='--', linewidth=0.8)
 axes[1].set_title('시가총액 가중(VW) 누적 수익률 하위 5개 업종', fontproperties=font_prop, fontsize=14, fontweight='bold')
@@ -106,4 +74,31 @@ axes[1].grid(alpha=0.3)
 
 plt.tight_layout()
 plt.savefig('sector_cum_returns.png', dpi=300)
-print("sector_cum_returns.png 생성 완료")
+plt.close()
+
+# 4-2. 시각화 2: 동일 가중(EW) 기준 (sector_cum_returns_ew.png)
+summary_ew_sorted = summary.sort_values(by='EW_Cum_Return(%)', ascending=False)
+top5_ew = summary_ew_sorted.head(5).index
+bot5_ew = summary_ew_sorted.tail(5).index
+
+fig, axes = plt.subplots(1, 2, figsize=(16, 6), sharey=True)
+for sec in top5_ew:
+    axes[0].plot(ew_cum.index, ew_cum[sec] * 100, label=f"{sec} ({summary.loc[sec, 'EW_Cum_Return(%)']}%)")
+axes[0].axhline(0, color='black', linestyle='--', linewidth=0.8)
+axes[0].set_title('동일 가중(EW) 누적 수익률 상위 5개 업종', fontproperties=font_prop, fontsize=14, fontweight='bold')
+axes[0].set_ylabel('누적 수익률 (%)', fontproperties=font_prop, fontsize=12)
+axes[0].legend(loc='upper left', prop=font_prop, fontsize=10)
+axes[0].grid(alpha=0.3)
+
+for sec in bot5_ew:
+    axes[1].plot(ew_cum.index, ew_cum[sec] * 100, label=f"{sec} ({summary.loc[sec, 'EW_Cum_Return(%)']}%)")
+axes[1].axhline(0, color='black', linestyle='--', linewidth=0.8)
+axes[1].set_title('동일 가중(EW) 누적 수익률 하위 5개 업종', fontproperties=font_prop, fontsize=14, fontweight='bold')
+axes[1].legend(loc='lower left', prop=font_prop, fontsize=10)
+axes[1].grid(alpha=0.3)
+
+plt.tight_layout()
+plt.savefig('sector_cum_returns_ew.png', dpi=300)
+plt.close()
+
+print("완료: sector_cum_returns.png (VW) 및 sector_cum_returns_ew.png (EW) 생성 완료")
